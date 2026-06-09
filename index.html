@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Глоссарий — UPGRADE AI Академиясы</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f0f4ff; font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; padding: 16px; }
+  input:focus { outline: 2px solid #2563EB !important; border-color: #2563EB !important; }
+  button { transition: opacity 0.15s; }
+  button:hover { opacity: 0.82; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #F3F4F6; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+// [term_en, term_kk, desc_kk, category_kk, term_ru, desc_ru, category_ru]
+const GLOSSARY = [
+  ["LLM","Large Language Model","Үлкен тілдік модель (GPT-4, Claude, Grok). Адам тілін түсіне алатын және генерациялай алатын нейрондық желі.","Базалық AI","Большая языковая модель","Нейросеть (GPT-4, Claude, Grok), которая понимает и генерирует человеческую речь.","Основы AI"],
+  ["Prompt","Промпт","Нейрондық желіге қажетті нәтижені алу үшін жазатын мәтіндік сұраным немесе команда.","Базалық AI","Промпт","Текстовый запрос или команда, которую вы пишете нейросети для получения нужного результата.","Основы AI"],
+  ["Token","Токен","AI-дағы мәтін есептеу бірлігі. 100 сөз ≈ 130–140 токен. API арқылы жұмыс жасағанда осыған ақы төленеді.","Базалық AI","Токен","Единица текста в AI. 100 слов ≈ 130–140 токенов. За них платят при работе через API.","Основы AI"],
+  ["Context Window","Контекстік терезе","AI-дың бір сеанстағы жады көлемі. Claude 3.5 Sonnet — 200k токен: диалог кезінде бір кітапты есінде ұстай алады.","Базалық AI","Контекстное окно","Объём памяти AI за одну сессию. Claude 3.5 Sonnet — 200k токенов: помнит целую книгу.","Основы AI"],
+  ["Hallucination","Галлюцинация","Нейрондық желінің сенімді қатесі: AI жоқ фактілерді, кодты немесе сілтемелерді шын деп шығарып береді.","Базалық AI","Галлюцинация","Уверенная ошибка нейросети: AI выдаёт несуществующие факты, код или ссылки как реальные.","Основы AI"],
+  ["System Prompt","Жүйелік промпт","Моделдің мінез-құлқының жасырын жаһандық параметрлері. Мысалы: 'Сен тәжірибелі React-разработчиксің'.","Базалық AI","Системный промпт","Скрытые глобальные параметры поведения модели. Например: 'Ты опытный React-разработчик'.","Основы AI"],
+  ["Temperature","Температура","Модельдің 0-ден 1-ге дейінгі 'шығармашылық' параметрі. 0 — қатаң жауаптар, 1 — максималды шығармашылық.","Базалық AI","Температура","Параметр 'творчества' модели от 0 до 1. 0 — строгие ответы, 1 — максимальная креативность.","Основы AI"],
+  ["API","API","Сайтыңыздың Anthropic немесе OpenAI серверлеріне тікелей сұраным жіберуге мүмкіндік беретін 'көпір'.","Базалық AI","API","'Мост', позволяющий вашему сайту напрямую отправлять запросы на серверы Anthropic или OpenAI.","Основы AI"],
+  ["Multimodal AI","Мультимодалды AI","Тек мәтінмен ғана емес, суреттер, видео, аудио файлдармен де жұмыс жасайтын модель (GPT-4o, Claude 3.5).","Базалық AI","Мультимодальный AI","Модель, работающая не только с текстом, но и с изображениями, видео, аудио (GPT-4o, Claude 3.5).","Основы AI"],
+  ["Fine-Tuning","Файн-тюнинг","Белгілі бір стильді меңгеруі үшін дайын модельді өз деректеріңізде қосымша үйрету процесі.","Базалық AI","Файн-тюнинг","Дообучение готовой модели на своих данных, чтобы освоить определённый стиль или задачу.","Основы AI"],
+  ["Weights","Модель салмақтары","Нейрондық желі ішіндегі үйрету барысында реттелген сандық параметрлер. Бұл модельдің 'миы'.","Базалық AI","Веса модели","Числовые параметры внутри нейросети, настроенные в ходе обучения. Это 'мозг' модели.","Основы AI"],
+  ["Open-Source Models","Open-Source модельдер","Ашық кодты нейрондық желілер (Llama 3, Mistral) — өз серверіңізге тегін жүктеп орнатуға болады.","Базалық AI","Open-Source модели","Нейросети с открытым кодом (Llama 3, Mistral) — можно бесплатно установить на свой сервер.","Основы AI"],
+  ["Proprietary Models","Жабық модельдер","Тек жазылым немесе API арқылы қолжетімді коммерциялық нейрондық желілер (Claude, GPT-4, Gemini).","Базалық AI","Закрытые модели","Коммерческие нейросети (Claude, GPT-4, Gemini), доступные только по подписке или API.","Основы AI"],
+  ["Embedding","Эмбеддинг","Мәтінді мағынасын көрсететін математикалық векторға аудару. Семантикалық іздеу үшін қолданылады.","Базалық AI","Эмбеддинг","Перевод текста в математический вектор, отражающий смысл. Используется для семантического поиска.","Основы AI"],
+  ["Context Window Depletion","Контекст таусылуы","Диалог модель лимитінен асқан кезде AI сөйлесудің басын ұмыта бастайды.","Базалық AI","Исчерпание контекста","Когда диалог превышает лимит модели, AI начинает забывать начало разговора.","Основы AI"],
+  ["AI Agent","AI Агент","Мақсат берілген автономды нейрондық желі — ол адамнан сұрамай-ақ қадамдарды өзі шешеді.","Агенттер","AI Агент","Автономная нейросеть с заданной целью — она сама решает шаги, не спрашивая человека.","Агенты"],
+  ["Multi-Agent System","Мультиагенттік жүйе","Бірнеше мамандандырылған агенттер бір-бірімен байланысатын экожүйе.","Агенттер","Мультиагентная система","Экосистема нескольких специализированных агентов, взаимодействующих друг с другом.","Агенты"],
+  ["Orchestrator","Оркестратор","Тапсырмаларды кіші агенттер арасында бөлетін басты басқарушы агент.","Агенттер","Оркестратор","Главный управляющий агент, распределяющий задачи между подагентами.","Агенты"],
+  ["RAG","Retrieval-Augmented Generation","AI жауап бермес бұрын деректер қорынан ақпарат іздейді — галлюцинациясыз дәл жауап береді.","Агенттер","Retrieval-Augmented Generation","AI ищет информацию в базе данных перед ответом — даёт точный ответ без галлюцинаций.","Агенты"],
+  ["Vector Database","Векторлық деректер қоры","Эмбеддингтерді сақтауға арналған деректер қоры. AI қажетті контекстті лезде табады (Pinecone, Chroma).","Агенттер","Векторная база данных","База данных для хранения эмбеддингов. AI мгновенно находит нужный контекст (Pinecone, Chroma).","Агенты"],
+  ["LangChain","LangChain / LangGraph","Нейрондық желілерден күрделі логикалық тізбектер мен агенттік жүйелер жасауға арналған фреймворктер.","Агенттер","LangChain / LangGraph","Фреймворки для создания сложных логических цепочек и агентных систем из нейросетей.","Агенты"],
+  ["n8n","n8n / Make","AI, Telegram боттары, CRM арасындағы байланысты реттейтін no-code автоматтандыру платформалары.","Агенттер","n8n / Make","No-code платформы автоматизации, связывающие AI, Telegram-боты и CRM между собой.","Агенты"],
+  ["CrewAI","CrewAI","Әр агентке рөл, мақсат және құралдар тағайындалатын AI агенттер командасын жасауға арналған фреймворк.","Агенттер","CrewAI","Фреймворк для создания команды AI-агентов, где каждому назначены роль, цель и инструменты.","Агенты"],
+  ["Tool Use","Tool Use / Function Calling","AI мәтіндік білімі жетіспеген кезде сыртқы құралдарды (калькулятор, Google, ДҚ) шақыру қабілеті.","Агенттер","Tool Use / Function Calling","Способность AI вызывать внешние инструменты (калькулятор, Google, БД) когда не хватает знаний.","Агенты"],
+  ["Human-in-the-loop","Human-in-the-loop","AI барлық рутинаны орындайды, бірақ соңғы әрекет алдында адамның мақұлдауын күтеді.","Агенттер","Human-in-the-loop","AI выполняет всю рутину, но ждёт одобрения человека перед финальным действием.","Агенты"],
+  ["Autonomous Workflow","Автономды воркфлоу","Триггер бойынша іске қосылатын және AI адамсыз толығымен орындайтын процестер тізбегі.","Агенттер","Автономный воркфлоу","Цепочка процессов, запускаемых по триггеру и полностью выполняемых AI без человека.","Агенты"],
+  ["Vibe Coding","Вайб-кодинг","Разработчик режиссер рөлінде: AI-ға тапсырмаларды тұжырымдайды, ал AI бүкіл қосымшаны жазып түзетеді.","Дамыту","Вайб-кодинг","Разработчик в роли режиссёра: формулирует задачи AI, а AI пишет и правит всё приложение.","Разработка"],
+  ["Cursor","Cursor","VS Code негізіндегі, Claude және GPT-мен тереңінен интеграцияланған ең танымал AI-native редакторы.","Дамыту","Cursor","Самый популярный AI-native редактор на базе VS Code, глубоко интегрированный с Claude и GPT.","Разработка"],
+  ["Windsurf","Windsurf","Файлдар жасай алатын, терминалды іске қоса алатын 'агенттік' код редакторы. Cursor-дың бәсекелесі.","Дамыту","Windsurf","'Агентный' редактор кода, умеющий создавать файлы и запускать терминал. Конкурент Cursor.","Разработка"],
+  ["Claude Code","Claude Code","Anthropic-тің ресми CLI агенті: терминалда жұмыс жасайды, код жазады, файлдарды оқиды.","Дамыту","Claude Code","Официальный CLI-агент Anthropic: работает в терминале, пишет код, читает файлы.","Разработка"],
+  ["Supabase","Supabase","BaaS-платформа: PostgreSQL + аутентификация + векторлар + API. Дәстүрлі бэкенді алмастырады.","Дамыту","Supabase","BaaS-платформа: PostgreSQL + аутентификация + векторы + API. Заменяет традиционный бэкенд.","Разработка"],
+  ["Vercel","Vercel","AI жобаларына оңтайландырылған Next.js қосымшаларын лезде деплой жасауға арналған бұлтты платформа.","Дамыту","Vercel","Облачная платформа для мгновенного деплоя Next.js-приложений, оптимизированная для AI-проектов.","Разработка"],
+  ["Artifacts","Артефакттар (Claude)","Клодтың жеке терезесі — жасалған код нақты уақытта рендерленеді: сайттар, ойындар, схемалар.","Дамыту","Артефакты (Claude)","Отдельное окно Claude — сгенерированный код рендерится в реальном времени: сайты, игры, схемы.","Разработка"],
+  ["Localhost","Localhost","Интернетке шықпай тұрып сайттар мен агенттерді тестілеуге арналған жергілікті сервер (localhost:3000).","Дамыту","Localhost","Локальный сервер для тестирования сайтов и агентов без выхода в интернет (localhost:3000).","Разработка"],
+  ["Copilot","Copilot","Жазу барысында код жолдарын автоматты түрде толықтыратын AI-помощник.","Дамыту","Copilot","AI-помощник, автоматически дополняющий строки кода в процессе написания.","Разработка"],
+  ["Midjourney","Midjourney","Discord арқылы фотореалистік және көркем суреттер генерациялауға арналған үздік нейрондық желі.","Суреттер","Midjourney","Лучшая нейросеть для генерации фотореалистичных и художественных изображений через Discord.","Изображения"],
+  ["Stable Diffusion","Stable Diffusion","Өз компьютерге орнатуға болатын тегін open-source сурет генерациялау нейрондық желісі.","Суреттер","Stable Diffusion","Бесплатная open-source нейросеть генерации изображений, которую можно установить на свой ПК.","Изображения"],
+  ["Flux","Flux","Суреттерде мәтінді тамаша жазатын және қолдарды дұрыс сызатын заманауи генерация моделі.","Суреттер","Flux","Современная модель генерации, отлично пишущая текст на изображениях и правильно рисующая руки.","Изображения"],
+  ["Text-to-Image","Text-to-Image (T2I)","Мәтіндік сипаттаманы дайын суретке айналдыру технологиясы.","Суреттер","Text-to-Image (T2I)","Технология преобразования текстового описания в готовое изображение.","Изображения"],
+  ["Inpainting","Инпейнтинг","Суреттегі таңдалған аймақты ауыстыру немесе сызып толтыру.","Суреттер","Инпейнтинг","Замена или дорисовка выбранной области на изображении.","Изображения"],
+  ["Outpainting","Аутпейнтинг","Суреттің шеттерін сызу: AI кадр шекарасынан тыс не болуы мүмкін екенін ойлап табады.","Суреттер","Аутпейнтинг","Дорисовка краёв изображения: AI придумывает, что могло быть за границей кадра.","Изображения"],
+  ["Negative Prompt","Негативті промпт","Суретте болмауы тиіс заттар тізімі (blur, low quality, deformed hands).","Суреттер","Негативный промпт","Список того, чего не должно быть на изображении (blur, low quality, deformed hands).","Изображения"],
+  ["Upscaling","Апскейлинг","Суреттің ажыратымдылығын AI арқылы ұлғайту, детализация мен анықтылықты арттыру.","Суреттер","Апскейлинг","Увеличение разрешения изображения через AI с повышением детализации и чёткости.","Изображения"],
+  ["LoRA","LoRA","Stable Diffusion/Flux үшін нақты бет, кейіпкер немесе стиль бойынша үйретілген микро-модель.","Суреттер","LoRA","Микромодель для Stable Diffusion/Flux, обученная на конкретном лице, персонаже или стиле.","Изображения"],
+  ["Seed","Сид","Генерацияның бірегей нөмірі: бір сид + бір промпт = максималды ұқсас нәтижелер.","Суреттер","Сид","Уникальный номер генерации: один сид + один промпт = максимально похожие результаты.","Изображения"],
+  ["ControlNet","ControlNet","Генерация кезінде адамның позасын, бөлме геометриясын немесе объект контурларын қатаң бекітуге арналған құрал.","Суреттер","ControlNet","Инструмент для жёсткой фиксации позы человека, геометрии комнаты или контуров объекта при генерации.","Изображения"],
+  ["ElevenLabs","ElevenLabs","Дауыс интонациялары мен эмоцияларын сақтай отырып дауыс клондауға арналған үздік нейрондық желі.","Видео/Аудио","ElevenLabs","Лучшая нейросеть для клонирования голоса с сохранением интонаций и эмоций.","Видео/Аудио"],
+  ["Voice Cloning","Дауыс клондау","AI-ды қысқа аудиожазбада үйрету — ол осы дауыспен кез келген мәтінді айта алады.","Видео/Аудио","Клонирование голоса","Обучение AI на коротком аудио — он может произнести любой текст этим голосом.","Видео/Аудио"],
+  ["Lipsync","Липсинк","Видеодағы адамның ерніндегі кез келген аудио файлмен кез келген тілде синхрондау.","Видео/Аудио","Липсинк","Синхронизация губ человека в видео с любым аудио-файлом на любом языке.","Видео/Аудио"],
+  ["Deepfake","Дипфейк","Мимиканы сақтай отырып видеодағы бір адамның бетін екіншісінің бетімен ауыстыру.","Видео/Аудио","Дипфейк","Замена лица одного человека в видео лицом другого с сохранением мимики.","Видео/Аудио"],
+  ["Suno","Suno / Udio","Мәтіндік сипаттама бойынша вокалмен толыққанды музыкалық трек генерациялайтын нейрондық желілер.","Видео/Аудио","Suno / Udio","Нейросети, генерирующие полноценный музыкальный трек с вокалом по текстовому описанию.","Видео/Аудио"],
+  ["Text-to-Video","Text-to-Video (T2V)","Мәтіндік промпт бойынша нөлден бейне ролик жасау.","Видео/Аудио","Text-to-Video (T2V)","Создание видеоролика с нуля по текстовому промпту.","Видео/Аудио"],
+  ["Remotion","Remotion","Таймлайндағы анимациялармен бейне роликтер жасауға арналған React-кітапханасы.","Видео/Аудио","Remotion","React-библиотека для создания видеороликов с анимациями на таймлайне.","Видео/Аудио"],
+  ["CPL","CPL — Cost Per Lead","Бір өтінішті тарту құны — маркетингтегі оптимизациялаудың негізгі көрсеткіші.","Маркетинг","CPL — Cost Per Lead","Стоимость привлечения одной заявки — ключевой показатель оптимизации в маркетинге.","Маркетинг"],
+  ["ROI","ROMI / ROI","Маркетингтік инвестициялардың өтелімділігі. 100 тг салдыңыз — 1100 тг алдыңыз: ROMI = 1000%.","Маркетинг","ROMI / ROI","Окупаемость маркетинговых инвестиций. Вложили 100 тг — получили 1100 тг: ROMI = 1000%.","Маркетинг"],
+  ["A/B Testing","A/B Тестілеу","AI аналитикасы арқылы ең жақсы конверсияны анықтау үшін екі нұсқаны бір мезгілде іске қосу.","Маркетинг","A/B Тестирование","Запуск двух вариантов одновременно для определения лучшей конверсии через AI-аналитику.","Маркетинг"],
+  ["UTM","UTM-белгілер","Сілтемелерге қосылатын арнайы жалғаулар: клиент қай жарнамадан келгенін дәл білу үшін.","Маркетинг","UTM-метки","Специальные теги, добавляемые к ссылкам: точно знать, из какой рекламы пришёл клиент.","Маркетинг"],
+  ["Lead Qualifier","Лид квалификаторы","Алғаш рет клиентпен байланысатын және оның сатып алуға дайындығын анықтайтын AI ассистент.","Маркетинг","Лид квалификатор","AI-ассистент, впервые контактирующий с клиентом и определяющий его готовность к покупке.","Маркетинг"],
+  ["Lookalike","Lookalike (LAL)","Рекламалық кабинеттердің сіздің сатып алушыларыңызға максималды ұқсас адамдарды іздейтін алгоритмі.","Маркетинг","Lookalike (LAL)","Алгоритм рекламных кабинетов, ищущий людей максимально похожих на ваших покупателей.","Маркетинг"],
+  ["Conversion Rate","Конверсия (CR)","Мақсатты әрекет жасаған сайт келушілерінің пайызы. 100 кіруден 5 өтініш = CR 5%.","Маркетинг","Конверсия (CR)","Процент посетителей сайта, совершивших целевое действие. 100 заходов, 5 заявок = CR 5%.","Маркетинг"],
+  ["AGI","AGI — Artificial General Intelligence","Жалпы жасанды интеллект — кез келген тапсырманы адам деңгейінде орындайтын гипотетикалық AI.","Тренд","AGI — Artificial General Intelligence","Общий искусственный интеллект — гипотетический AI, выполняющий любую задачу на уровне человека.","Тренды"],
+  ["Zero-Shot","Zero-Shot Prompting","AI-дан бірден, мысал бермей-ақ тапсырма шешуін сұрау.","Тренд","Zero-Shot Prompting","Просить AI решить задачу сразу, без примеров.","Тренды"],
+  ["Few-Shot","Few-Shot Prompting","Промптта AI-ға бірнеше үлгілі мысал беру — жауаптар сапасы едәуір артады.","Тренд","Few-Shot Prompting","Давать AI несколько примеров в промпте — качество ответов заметно улучшается.","Тренды"],
+  ["Chain-of-Thought","Chain-of-Thought","AI-дан ойлауын қадамдыл жазуын сұрау ('Let's think step by step') — логикалық қателер азаяды.","Тренд","Chain-of-Thought","Просить AI писать размышления пошагово ('Let's think step by step') — меньше логических ошибок.","Тренды"],
+  ["RLHF","RLHF","Адам бағалауы негізінде AI үйрету: адамдар үздік жауапты таңдайды, модельді мейірімді етеді.","Тренд","RLHF","Обучение AI на основе оценок людей: люди выбирают лучший ответ, делая модель безопаснее.","Тренды"],
+  ["Quantization","Квантизация","Нейрондық желіні сығымдау — ауыр модельдерді сапасын аз жоғалтып әлсіз жабдықта іске қосу.","Тренд","Квантизация","Сжатие нейросети — запуск тяжёлых моделей на слабом железе с минимальной потерей качества.","Тренды"],
+  ["MoE","MoE — Mixture of Experts","GPT-4 архитектурасы: мамандандырылған кіші модельдерден тұратын үлкен модель.","Тренд","MoE — Mixture of Experts","Архитектура GPT-4: большая модель, состоящая из специализированных мини-моделей.","Тренды"],
+  ["Guardrails","Гардрейлдер","Кіруде немесе шығуда дұрыс емес сұраныстарды блоктайтын AI үстіне орнатылған қатаң ережелер.","Тренд","Гардрейлы","Жёсткие правила поверх AI, блокирующие некорректные запросы на входе или выходе.","Тренды"],
+  ["GPU","GPU","Видеокарта — нейрондық желілердің жұмысы мен үйретілуі үшін негізгі 'отын' (Nvidia H100).","Тренд","GPU","Видеокарта — основное 'топливо' для работы и обучения нейросетей (Nvidia H100).","Тренды"],
+  ["Synthetic Data","Синтетикалық деректер","Басқа нейрондық желілерді үйрету үшін нейрондық желілер жасаған деректер.","Тренд","Синтетические данные","Данные, созданные нейросетями для обучения других нейросетей.","Тренды"],
+  ["Webhooks","Вебхуктер","Бір жүйе (мысалы, төлем жүйесі) AI агентіне лезде хабарлама жіберетін механизм.","Тренд","Вебхуки","Механизм, при котором одна система (например, платёжная) мгновенно уведомляет AI-агента.","Тренды"],
+  ["Agent Persona","Агент Персонасы","AI агентіне жазылған мінез, рөл, шектеулер мен қарым-қатынас тонының толық сипаттамасы.","Тренд","Агент Персона","Полное описание характера, роли, ограничений и тона общения, прописанное для AI-агента.","Тренды"],
+];
+
+const CHAPTER_COLORS_KK = {
+  "Базалық AI":"#2563EB","Агенттер":"#7C3AED","Дамыту":"#0891B2",
+  "Суреттер":"#DC2626","Видео/Аудио":"#059669","Маркетинг":"#D97706","Тренд":"#DB2777",
+};
+const CHAPTER_COLORS_RU = {
+  "Основы AI":"#2563EB","Агенты":"#7C3AED","Разработка":"#0891B2",
+  "Изображения":"#DC2626","Видео/Аудио":"#059669","Маркетинг":"#D97706","Тренды":"#DB2777",
+};
+
+const CHIPS = ["LLM","Prompt","RAG","AI Agent","Hallucination","Fine-Tuning","Vibe Coding","Midjourney","AGI","LoRA","Supabase","ElevenLabs"];
+
+const UI = {
+  kk: {
+    title:"AI Глоссарий Ассистент", sub:"термин · 7 тарау · қазақша/орысша",
+    active:"Белсенді", all:"✕ Бәрі", allTerms:"барлық терминдер",
+    welcome:"Сәлем! Мен AI Глоссарий Ассистентімін.",
+    welcomeSub:"Кез-келген AI терминін сұраңыз. Жоғарыдағы тараулардан шолыңыз немесе төмендегі тақырыпшалардан таңдаңыз.",
+    notFound:(q)=>`«${q}» бойынша ештеңе табылмады. Басқаша жазып көріңіз.`,
+    placeholder:"Термин жазыңыз... (мысалы: RAG, token, агент)",
+    btn:"Іздеу →", footer:"UPGRADE AI Академиясы",
+    chapterColors: CHAPTER_COLORS_KK, catIndex: 3, termIndex: 1, descIndex: 2,
+  },
+  ru: {
+    title:"AI Глоссарий Ассистент", sub:"терминов · 7 глав · казахский/русский",
+    active:"Активен", all:"✕ Все", allTerms:"все термины",
+    welcome:"Привет! Я AI Глоссарий Ассистент.",
+    welcomeSub:"Спрашивайте любой AI-термин. Листайте по главам выше или выбирайте из быстрых тем ниже.",
+    notFound:(q)=>`По запросу «${q}» ничего не найдено. Попробуйте иначе.`,
+    placeholder:"Введите термин... (например: RAG, токен, агент)",
+    btn:"Поиск →", footer:"UPGRADE AI Академиясы",
+    chapterColors: CHAPTER_COLORS_RU, catIndex: 6, termIndex: 4, descIndex: 5,
+  }
+};
+
+function normalize(s){ return s.toLowerCase().replace(/[^a-zа-яёіңүұқөәғһ0-9\s]/gi,"").trim(); }
+function search(q, lang){
+  const cfg = UI[lang];
+  const nq=normalize(q), words=nq.split(/\s+/).filter(w=>w.length>1);
+  if(!words.length) return [];
+  let results=[];
+  for(const t of GLOSSARY){
+    const hay=normalize(t[0]+" "+t[cfg.termIndex]+" "+t[cfg.catIndex]);
+    let score=0;
+    for(const w of words){ if(hay.includes(w)) score+=hay.startsWith(w)?3:1; }
+    if(score>0) results.push({t,score});
+  }
+  results.sort((a,b)=>b.score-a.score);
+  return results.slice(0,4).map(r=>r.t);
+}
+
+function App(){
+  const [lang, setLang] = useState("kk");
+  const [messages,setMessages]=useState([{role:"bot",welcome:true}]);
+  const [input,setInput]=useState("");
+  const [activeChapter,setActiveChapter]=useState(null);
+  const chatRef=useRef(null);
+
+  useEffect(()=>{ if(chatRef.current) chatRef.current.scrollTop=chatRef.current.scrollHeight; },[messages]);
+
+  const cfg = UI[lang];
+  const CHAPTERS = Object.keys(cfg.chapterColors);
+  const color=(cat)=>cfg.chapterColors[cat]||"#6B7280";
+
+  function switchLang(l){
+    setLang(l);
+    setActiveChapter(null);
+    setMessages([{role:"bot",welcome:true}]);
+  }
+
+  function send(q){
+    const query=(q||input).trim(); if(!query) return;
+    setInput("");
+    const results=search(query, lang);
+    setMessages(prev=>[...prev,{role:"user",text:query},results.length?{role:"bot",results}:{role:"bot",notFound:query}]);
+  }
+
+  return (
+    <div style={{fontFamily:"system-ui,sans-serif",maxWidth:680,margin:"0 auto",background:"#fff",borderRadius:16,padding:"20px 16px",boxShadow:"0 4px 24px #0001"}}>
+
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+        <div style={{width:44,height:44,borderRadius:"50%",background:"#EEF2FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🤖</div>
+        <div>
+          <div style={{fontWeight:600,fontSize:16,color:"#111827"}}>{cfg.title}</div>
+          <div style={{fontSize:12,color:"#6B7280"}}>{GLOSSARY.length} {cfg.sub}</div>
+        </div>
+        <div style={{marginLeft:"auto",display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
+          <div style={{background:"#DCFCE7",color:"#166534",fontSize:11,fontWeight:500,padding:"3px 10px",borderRadius:20}}>{cfg.active}</div>
+          {/* Lang toggle */}
+          <div style={{display:"flex",gap:4}}>
+            {["kk","ru"].map(l=>(
+              <button key={l} onClick={()=>switchLang(l)} style={{
+                padding:"2px 10px",borderRadius:12,fontSize:11,cursor:"pointer",fontWeight:600,
+                border:`1.5px solid ${lang===l?"#2563EB":"#E5E7EB"}`,
+                background:lang===l?"#2563EB":"#fff",
+                color:lang===l?"#fff":"#6B7280"
+              }}>{l==="kk"?"ҚАЗ":"РУС"}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Chapter filter */}
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
+        {CHAPTERS.map(ch=>(
+          <button key={ch} onClick={()=>setActiveChapter(activeChapter===ch?null:ch)} style={{
+            padding:"4px 12px",borderRadius:20,fontSize:12,cursor:"pointer",
+            border:`1.5px solid ${activeChapter===ch?color(ch):"#E5E7EB"}`,
+            background:activeChapter===ch?color(ch):"#fff",
+            color:activeChapter===ch?"#fff":"#374151",fontWeight:activeChapter===ch?600:400
+          }}>{ch}</button>
+        ))}
+        {activeChapter&&<button onClick={()=>setActiveChapter(null)} style={{padding:"4px 10px",borderRadius:20,fontSize:12,cursor:"pointer",border:"1.5px solid #E5E7EB",background:"#F9FAFB",color:"#6B7280"}}>{cfg.all}</button>}
+      </div>
+
+      {/* Chapter terms */}
+      {activeChapter&&(
+        <div style={{background:"#F8FAFF",border:`1.5px solid ${color(activeChapter)}`,borderRadius:10,padding:12,marginBottom:12}}>
+          <div style={{fontWeight:600,fontSize:13,color:color(activeChapter),marginBottom:8}}>{activeChapter} — {cfg.allTerms}</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+            {GLOSSARY.filter(t=>t[cfg.catIndex]===activeChapter).map(t=>(
+              <button key={t[0]} onClick={()=>{setActiveChapter(null);send(t[0]);}} style={{
+                padding:"3px 10px",borderRadius:16,fontSize:12,cursor:"pointer",
+                border:`1px solid ${color(activeChapter)}22`,background:`${color(activeChapter)}11`,
+                color:color(activeChapter),fontWeight:500
+              }}>{t[0]}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Chat */}
+      <div ref={chatRef} style={{border:"1px solid #E5E7EB",borderRadius:12,background:"#F9FAFB",minHeight:280,maxHeight:380,overflowY:"auto",padding:12,display:"flex",flexDirection:"column",gap:10,marginBottom:10}}>
+        {messages.map((msg,i)=>{
+          if(msg.welcome) return(
+            <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:"#EEF2FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🤖</div>
+              <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:"4px 12px 12px 12px",padding:"10px 14px",maxWidth:"85%"}}>
+                <div style={{fontWeight:600,fontSize:13,marginBottom:4}}>{cfg.welcome}</div>
+                <div style={{fontSize:12.5,color:"#6B7280",lineHeight:1.6}}>{cfg.welcomeSub}</div>
+              </div>
+            </div>
+          );
+          if(msg.role==="user") return(
+            <div key={i} style={{display:"flex",justifyContent:"flex-end"}}>
+              <div style={{background:"#EEF2FF",color:"#3730A3",borderRadius:"12px 4px 12px 12px",padding:"9px 14px",fontSize:13,maxWidth:"80%"}}>{msg.text}</div>
+            </div>
+          );
+          if(msg.notFound) return(
+            <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:"#EEF2FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🤖</div>
+              <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:"4px 12px 12px 12px",padding:"10px 14px",fontSize:12.5,color:"#9CA3AF",fontStyle:"italic",maxWidth:"85%"}}>{cfg.notFound(msg.notFound)}</div>
+            </div>
+          );
+          if(msg.results) return(
+            <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+              <div style={{width:28,height:28,borderRadius:"50%",background:"#EEF2FF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🤖</div>
+              <div style={{background:"#fff",border:"1px solid #E5E7EB",borderRadius:"4px 12px 12px 12px",padding:"10px 14px",maxWidth:"90%",width:"100%"}}>
+                {msg.results.map((t,j)=>(
+                  <div key={j} style={{borderTop:j>0?"1px solid #F3F4F6":"none",paddingTop:j>0?8:0,marginTop:j>0?8:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3,flexWrap:"wrap"}}>
+                      <span style={{fontWeight:700,fontSize:13,color:"#111827"}}>{t[0]}</span>
+                      <span style={{fontSize:12,color:"#9CA3AF"}}>— {t[cfg.termIndex]}</span>
+                      <span style={{marginLeft:"auto",fontSize:10,padding:"1px 7px",borderRadius:10,background:`${color(t[cfg.catIndex])}18`,color:color(t[cfg.catIndex]),fontWeight:500}}>{t[cfg.catIndex]}</span>
+                    </div>
+                    <div style={{fontSize:12.5,color:"#374151",lineHeight:1.6}}>{t[cfg.descIndex]}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+          return null;
+        })}
+      </div>
+
+      {/* Chips */}
+      <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:10}}>
+        {CHIPS.map(c=>(<button key={c} onClick={()=>send(c)} style={{padding:"4px 11px",borderRadius:16,fontSize:11.5,cursor:"pointer",border:"1px solid #E5E7EB",background:"#fff",color:"#374151"}}>{c}</button>))}
+      </div>
+
+      {/* Input */}
+      <div style={{display:"flex",gap:8}}>
+        <input value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}
+          placeholder={cfg.placeholder}
+          style={{flex:1,padding:"10px 14px",borderRadius:8,border:"1.5px solid #E5E7EB",fontSize:13.5,outline:"none",fontFamily:"inherit"}}/>
+        <button onClick={()=>send()} style={{padding:"10px 18px",borderRadius:8,border:"1.5px solid #2563EB",background:"#2563EB",color:"#fff",fontSize:13.5,cursor:"pointer",fontWeight:500}}>{cfg.btn}</button>
+      </div>
+
+      <div style={{textAlign:"center",fontSize:11,color:"#D1D5DB",marginTop:12}}>{cfg.footer} · {GLOSSARY.length} терминов</div>
+    </div>
+  );
+}
+
+ReactDOM.render(React.createElement(App), document.getElementById('root'));
+</script>
+</body>
+</html>
